@@ -1,4 +1,6 @@
+# Depo kökünde derle (panelde yanlışlıkla "remax" base verilmişse bunu ezer)
 [build]
+  base = "."
   command = "npm install"
   publish = "public"
 
