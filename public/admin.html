@@ -165,6 +165,10 @@
     const maleResults = document.getElementById("maleResults");
     const femaleResults = document.getElementById("femaleResults");
 
+    function formatNameLive(text) {
+      return String(text || "").replace(/\s+/g, " ").toLocaleUpperCase("tr-TR");
+    }
+
     function trUpper(text) {
       return String(text || "").trim().replace(/\s+/g, " ").toLocaleUpperCase("tr-TR");
     }
@@ -387,10 +391,16 @@
     });
 
     document.getElementById("newName").addEventListener("input", e => {
+      e.target.value = formatNameLive(e.target.value);
+    });
+    document.getElementById("newName").addEventListener("blur", e => {
       e.target.value = trUpper(e.target.value);
     });
 
     document.getElementById("bulkText").addEventListener("input", e => {
+      e.target.value = e.target.value.split("\n").map(line => formatNameLive(line)).join("\n");
+    });
+    document.getElementById("bulkText").addEventListener("blur", e => {
       e.target.value = e.target.value.split("\n").map(line => trUpper(line)).join("\n");
     });
 

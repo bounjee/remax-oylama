@@ -46,8 +46,12 @@
     const voteBtn = document.getElementById("voteBtn");
     const messageBox = document.getElementById("message");
 
+    function formatWhileTyping(text) {
+      return String(text).replace(/\s+/g, " ").toLocaleUpperCase("tr-TR");
+    }
+
     function normalizeName(text) {
-      return text.trim().replace(/\s+/g, " ").toLocaleUpperCase("tr-TR");
+      return String(text).trim().replace(/\s+/g, " ").toLocaleUpperCase("tr-TR");
     }
 
     function showMessage(text, type) {
@@ -72,8 +76,15 @@
 
     async function updateCandidates() {
       clearMessage();
+      const cursor = fullNameInput.selectionStart;
+      const before = fullNameInput.value;
+      const formatted = formatWhileTyping(before);
+      if (formatted !== before) {
+        fullNameInput.value = formatted;
+        fullNameInput.setSelectionRange(cursor, cursor);
+      }
+
       const fullName = normalizeName(fullNameInput.value);
-      fullNameInput.value = fullName;
 
       if (!fullName) {
         fillSelect(maleSelect, [], "Önce ad soyad giriniz");
@@ -142,6 +153,9 @@
     }
 
     fullNameInput.addEventListener("input", updateCandidates);
+    fullNameInput.addEventListener("blur", () => {
+      fullNameInput.value = normalizeName(fullNameInput.value);
+    });
     voteBtn.addEventListener("click", submitVote);
   </script>
 </body>
