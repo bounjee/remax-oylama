@@ -1,0 +1,6 @@
+node_modules/
+oylama.json
+oylama.json.tmp
+oylama.db
+.env
+.netlify/

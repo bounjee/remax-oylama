@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RE/MAX Best Admin</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="wrapper">
+    <div class="admin-card">
+      <div class="brand">RE/MAX BEST</div>
+
+      <div id="loginSection">
+        <h1>Admin Paneli</h1>
+        <p>Kullanıcı adı ve şifre ile giriş yapın.</p>
+
+        <div class="grid-2">
+          <div>
+            <label for="username">Kullanıcı Adı</label>
+            <input id="username" type="text" placeholder="admin" />
+          </div>
+          <div>
+            <label for="password">Şifre</label>
+            <input id="password" type="password" placeholder="Şifre" />
+          </div>
+        </div>
+
+        <div class="section-space">
+          <button id="loginBtn" class="full-btn" type="button">GİRİŞ YAP</button>
+        </div>
+        <div id="loginMessage" class="msg"></div>
+      </div>
+
+      <div id="adminSection" class="hidden">
+        <div class="top-bar">
+          <button id="toggleVotingBtn" class="secondary-btn" type="button">OYLAMAYI AÇ / KAPAT</button>
+          <button id="logoutBtn" class="secondary-btn" type="button">ÇIKIŞ YAP</button>
+          <button id="resetVotesBtn" class="danger-btn" type="button">TÜM OYLARI SIFIRLA</button>
+        </div>
+
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="dashboard" type="button">Dashboard</button>
+          <button class="tab-btn" data-tab="consultants" type="button">Danışmanlar</button>
+          <button class="tab-btn" data-tab="bulk" type="button">Toplu Ekleme</button>
+          <button class="tab-btn" data-tab="votes" type="button">Oy Kayıtları</button>
+          <button class="tab-btn" data-tab="results" type="button">Sonuçlar</button>
+        </div>
+
+        <div id="adminMessage" class="msg"></div>
+
+        <div id="tab-dashboard" class="tab-panel">
+          <h2>Dashboard</h2>
+          <div class="stats">
+            <div class="stat-box"><div>Toplam Danışman</div><div id="statTotal" class="big">0</div></div>
+            <div class="stat-box"><div>Oy Kullanan</div><div id="statVoted" class="big">0</div></div>
+            <div class="stat-box"><div>Oy Kullanmayan</div><div id="statNotVoted" class="big">0</div></div>
+            <div class="stat-box"><div>Oylama</div><div id="statVoting" class="big">AÇIK</div></div>
+          </div>
+        </div>
+
+        <div id="tab-consultants" class="tab-panel hidden">
+          <h2>Danışman Yönetimi</h2>
+          <div class="grid-2">
+            <div>
+              <label for="newName">Ad Soyad</label>
+              <input id="newName" class="uppercase" type="text" placeholder="AD SOYAD" />
+            </div>
+            <div>
+              <label for="newGender">Cinsiyet</label>
+              <select id="newGender">
+                <option value="ERKEK">ERKEK</option>
+                <option value="KADIN">KADIN</option>
+              </select>
+            </div>
+          </div>
+          <div class="section-space">
+            <button id="addConsultantBtn" class="full-btn" type="button">DANIŞMAN EKLE</button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ad Soyad</th>
+                  <th>Cinsiyet</th>
+                  <th>Durum</th>
+                  <th>Oy</th>
+                  <th>İşlem</th>
+                </tr>
+              </thead>
+              <tbody id="consultantsTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="tab-bulk" class="tab-panel hidden">
+          <h2>Toplu Danışman Ekleme</h2>
+          <p>Her satıra şu formatta yaz: AD SOYAD|ERKEK veya AD SOYAD|KADIN</p>
+          <label for="bulkText">Toplu Liste</label>
+          <textarea id="bulkText" class="uppercase" placeholder="İBRAHİM HALİL ÖCAL|ERKEK&#10;AYŞE DEMİR|KADIN"></textarea>
+          <div class="section-space">
+            <button id="bulkBtn" class="full-btn" type="button">TOPLU EKLE</button>
+          </div>
+        </div>
+
+        <div id="tab-votes" class="tab-panel hidden">
+          <h2>Oy Kayıtları</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Oy Veren</th>
+                  <th>Beyefendi Oyu</th>
+                  <th>Hanımefendi Oyu</th>
+                  <th>Tarih</th>
+                </tr>
+              </thead>
+              <tbody id="votesTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="tab-results" class="tab-panel hidden">
+          <h2>Sonuçlar</h2>
+          <div class="result-columns">
+            <div>
+              <h3>Beyefendi Sonuçları</h3>
+              <div id="maleResults"></div>
+            </div>
+            <div>
+              <h3>Hanımefendi Sonuçları</h3>
+              <div id="femaleResults"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function apiFetch(input, init = {}) {
+      return window.fetch(input, { credentials: "include", ...init });
+    }
+
+    const loginSection = document.getElementById("loginSection");
+    const adminSection = document.getElementById("adminSection");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const toggleVotingBtn = document.getElementById("toggleVotingBtn");
+    const resetVotesBtn = document.getElementById("resetVotesBtn");
+    const addConsultantBtn = document.getElementById("addConsultantBtn");
+    const bulkBtn = document.getElementById("bulkBtn");
+
+    const loginMessage = document.getElementById("loginMessage");
+    const adminMessage = document.getElementById("adminMessage");
+
+    const statTotal = document.getElementById("statTotal");
+    const statVoted = document.getElementById("statVoted");
+    const statNotVoted = document.getElementById("statNotVoted");
+    const statVoting = document.getElementById("statVoting");
+
+    const consultantsTable = document.getElementById("consultantsTable");
+    const votesTable = document.getElementById("votesTable");
+    const maleResults = document.getElementById("maleResults");
+    const femaleResults = document.getElementById("femaleResults");
+
+    function trUpper(text) {
+      return String(text || "").trim().replace(/\s+/g, " ").toLocaleUpperCase("tr-TR");
+    }
+
+    function showMessage(el, text, type) {
+      el.textContent = text;
+      el.className = `msg ${type}`;
+    }
+
+    function clearMessage(el) {
+      el.textContent = "";
+      el.className = "msg";
+    }
+
+    function formatDate(value) {
+      try { return new Date(value).toLocaleString("tr-TR"); }
+      catch { return value; }
+    }
+
+    async function checkSession() {
+      const res = await apiFetch("/api/admin/session");
+      const data = await res.json();
+
+      if (data.isAdmin) {
+        loginSection.classList.add("hidden");
+        adminSection.classList.remove("hidden");
+        await loadAll();
+      } else {
+        loginSection.classList.remove("hidden");
+        adminSection.classList.add("hidden");
+      }
+    }
+
+    async function login() {
+      clearMessage(loginMessage);
+      const payload = {
+        username: document.getElementById("username").value.trim(),
+        password: document.getElementById("password").value
+      };
+
+      const res = await apiFetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        showMessage(loginMessage, data.message || "Giriş başarısız.", "error");
+        return;
+      }
+
+      await checkSession();
+    }
+
+    async function logout() {
+      await apiFetch("/api/admin/logout", { method: "POST" });
+      window.location.reload();
+    }
+
+    async function loadDashboard() {
+      const res = await apiFetch("/api/admin/dashboard");
+      const data = await res.json();
+      statTotal.textContent = data.totalConsultants;
+      statVoted.textContent = data.votedCount;
+      statNotVoted.textContent = data.notVotedCount;
+      statVoting.textContent = data.votingOpen ? "AÇIK" : "KAPALI";
+    }
+
+    async function loadConsultants() {
+      const res = await apiFetch("/api/admin/consultants");
+      const data = await res.json();
+
+      consultantsTable.innerHTML = data.map(item => `
+        <tr>
+          <td>${item.full_name}</td>
+          <td>${item.gender}</td>
+          <td>${item.is_active ? '<span class="pill ok">AKTİF</span>' : '<span class="pill wait">PASİF</span>'}</td>
+          <td>${item.has_voted ? '<span class="pill ok">KULLANDI</span>' : '<span class="pill wait">KULLANMADI</span>'}</td>
+          <td>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="secondary-btn" type="button" onclick="editConsultant(${item.id}, '${String(item.full_name).replace(/'/g, "\\'")}', '${item.gender}', ${item.is_active})">Düzenle</button>
+              <button class="danger-btn" type="button" onclick="deleteConsultant(${item.id})">Sil / Pasif</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    async function loadVotes() {
+      const res = await apiFetch("/api/admin/votes");
+      const data = await res.json();
+
+      votesTable.innerHTML = data.length ? data.map(item => `
+        <tr>
+          <td>${item.voter_name}</td>
+          <td>${item.male_name}</td>
+          <td>${item.female_name}</td>
+          <td>${formatDate(item.created_at)}</td>
+        </tr>
+      `).join("") : `<tr><td colspan="4">Henüz oy kaydı yok.</td></tr>`;
+    }
+
+    async function loadResults() {
+      const res = await apiFetch("/api/admin/results");
+      const data = await res.json();
+
+      maleResults.innerHTML = data.maleResults.map(item => `
+        <div class="result-item"><strong>${item.full_name}</strong><span>${item.vote_count} oy</span></div>
+      `).join("");
+
+      femaleResults.innerHTML = data.femaleResults.map(item => `
+        <div class="result-item"><strong>${item.full_name}</strong><span>${item.vote_count} oy</span></div>
+      `).join("");
+    }
+
+    async function loadAll() {
+      await Promise.all([loadDashboard(), loadConsultants(), loadVotes(), loadResults()]);
+    }
+
+    async function addConsultant() {
+      clearMessage(adminMessage);
+      const payload = {
+        fullName: trUpper(document.getElementById("newName").value),
+        gender: document.getElementById("newGender").value
+      };
+
+      const res = await apiFetch("/api/admin/consultants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      showMessage(adminMessage, data.message, res.ok ? "success" : "error");
+      if (res.ok) {
+        document.getElementById("newName").value = "";
+        await loadAll();
+      }
+    }
+
+    async function bulkAdd() {
+      clearMessage(adminMessage);
+      const payload = { rawText: document.getElementById("bulkText").value };
+
+      const res = await apiFetch("/api/admin/consultants/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      showMessage(adminMessage, data.message, res.ok ? "success" : "error");
+      if (res.ok) {
+        document.getElementById("bulkText").value = "";
+        await loadAll();
+      }
+    }
+
+    async function toggleVoting() {
+      clearMessage(adminMessage);
+      const open = statVoting.textContent !== "AÇIK";
+
+      const res = await apiFetch("/api/admin/voting", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ votingOpen: open ? 1 : 0 })
+      });
+
+      const data = await res.json();
+      showMessage(adminMessage, data.message, res.ok ? "success" : "error");
+      if (res.ok) await loadDashboard();
+    }
+
+    async function resetVotes() {
+      if (!confirm("Tüm oylar sıfırlansın mı?")) return;
+      const res = await apiFetch("/api/admin/reset", { method: "POST" });
+      const data = await res.json();
+      showMessage(adminMessage, data.message, res.ok ? "success" : "error");
+      if (res.ok) await loadAll();
+    }
+
+    window.editConsultant = async function(id, fullName, gender, isActive) {
+      const newName = prompt("Yeni ad soyad:", fullName);
+      if (!newName) return;
+      const newGender = prompt("Yeni cinsiyet (ERKEK/KADIN):", gender);
+      if (!newGender) return;
+      const keepActive = confirm("Danışman aktif olsun mu?");
+
+      const res = await apiFetch(`/api/admin/consultants/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: trUpper(newName),
+          gender: trUpper(newGender),
+          isActive: keepActive ? 1 : 0
+        })
+      });
+
+      const data = await res.json();
+      showMessage(adminMessage, data.message, res.ok ? "success" : "error");
+      if (res.ok) await loadAll();
+    }
+
+    window.deleteConsultant = async function(id) {
+      if (!confirm("Danışmanı silmek veya pasife almak istiyor musunuz?")) return;
+      const res = await apiFetch(`/api/admin/consultants/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      showMessage(adminMessage, data.message, res.ok ? "success" : "error");
+      if (res.ok) await loadAll();
+    }
+
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(x => x.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(x => x.classList.add("hidden"));
+        btn.classList.add("active");
+        document.getElementById(`tab-${btn.dataset.tab}`).classList.remove("hidden");
+      });
+    });
+
+    document.getElementById("newName").addEventListener("input", e => {
+      e.target.value = trUpper(e.target.value);
+    });
+
+    document.getElementById("bulkText").addEventListener("input", e => {
+      e.target.value = e.target.value.split("\n").map(line => trUpper(line)).join("\n");
+    });
+
+    loginBtn.addEventListener("click", login);
+    logoutBtn.addEventListener("click", logout);
+    addConsultantBtn.addEventListener("click", addConsultant);
+    bulkBtn.addEventListener("click", bulkAdd);
+    toggleVotingBtn.addEventListener("click", toggleVoting);
+    resetVotesBtn.addEventListener("click", resetVotes);
+
+    checkSession();
+  </script>
+</body>
+</html>

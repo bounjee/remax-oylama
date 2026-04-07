@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RE/MAX Best Oylama</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="wrapper">
+    <div class="card">
+      <div class="brand">RE/MAX BEST</div>
+      <h1>Şıklık Oylaması</h1>
+      <p>En Şık Hanımefendi ve Beyefendiyi Birlikte Seçiyoruz</p>
+
+      <label for="fullName">Ad Soyad</label>
+      <input id="fullName" class="uppercase" type="text" placeholder="AD SOYAD" />
+
+      <label for="maleSelect">En Şık Beyefendi</label>
+      <select id="maleSelect">
+        <option value="">Önce ad soyad giriniz</option>
+      </select>
+
+      <label for="femaleSelect">En Şık Hanımefendi</label>
+      <select id="femaleSelect">
+        <option value="">Önce ad soyad giriniz</option>
+      </select>
+
+      <button id="voteBtn" class="full-btn" type="button">OYUMU GÖNDER</button>
+      <div id="message" class="msg"></div>
+
+      <div class="small-note">
+        Ad soyadınızı yazarsınız, sistem kayıtlı danışman listesinden kontrol eder. Adaylar sadece kayıtlı listeden gelir.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function apiFetch(input, init = {}) {
+      return window.fetch(input, { credentials: "include", ...init });
+    }
+
+    const fullNameInput = document.getElementById("fullName");
+    const maleSelect = document.getElementById("maleSelect");
+    const femaleSelect = document.getElementById("femaleSelect");
+    const voteBtn = document.getElementById("voteBtn");
+    const messageBox = document.getElementById("message");
+
+    function normalizeName(text) {
+      return text.trim().replace(/\s+/g, " ").toLocaleUpperCase("tr-TR");
+    }
+
+    function showMessage(text, type) {
+      messageBox.textContent = text;
+      messageBox.className = `msg ${type}`;
+    }
+
+    function clearMessage() {
+      messageBox.textContent = "";
+      messageBox.className = "msg";
+    }
+
+    function fillSelect(select, items, placeholder) {
+      select.innerHTML = `<option value="">${placeholder}</option>`;
+      items.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.id;
+        option.textContent = item.full_name;
+        select.appendChild(option);
+      });
+    }
+
+    async function updateCandidates() {
+      clearMessage();
+      const fullName = normalizeName(fullNameInput.value);
+      fullNameInput.value = fullName;
+
+      if (!fullName) {
+        fillSelect(maleSelect, [], "Önce ad soyad giriniz");
+        fillSelect(femaleSelect, [], "Önce ad soyad giriniz");
+        return;
+      }
+
+      try {
+        const statusRes = await apiFetch("/api/public/status");
+        const statusData = await statusRes.json();
+
+        if (!statusData.votingOpen) {
+          fillSelect(maleSelect, [], "Oylama kapalı");
+          fillSelect(femaleSelect, [], "Oylama kapalı");
+          showMessage("Oylama şu anda kapalı.", "error");
+          return;
+        }
+
+        const res = await apiFetch(`/api/public/candidates?fullName=${encodeURIComponent(fullName)}`);
+        const data = await res.json();
+
+        if (!data.found) {
+          fillSelect(maleSelect, [], "Danışman bulunamadı");
+          fillSelect(femaleSelect, [], "Danışman bulunamadı");
+          showMessage("Bu ad soyad danışman listesinde bulunamadı.", "error");
+          return;
+        }
+
+        fillSelect(maleSelect, data.maleCandidates, "Beyefendi seçiniz");
+        fillSelect(femaleSelect, data.femaleCandidates, "Hanımefendi seçiniz");
+      } catch {
+        showMessage("Adaylar yüklenirken hata oluştu.", "error");
+      }
+    }
+
+    async function submitVote() {
+      clearMessage();
+
+      const payload = {
+        fullName: fullNameInput.value,
+        maleId: maleSelect.value,
+        femaleId: femaleSelect.value
+      };
+
+      try {
+        const res = await apiFetch("/api/public/vote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showMessage(data.message || "Bir hata oluştu.", "error");
+          return;
+        }
+
+        showMessage(data.message, "success");
+        fullNameInput.value = "";
+        fillSelect(maleSelect, [], "Önce ad soyad giriniz");
+        fillSelect(femaleSelect, [], "Önce ad soyad giriniz");
+      } catch {
+        showMessage("Oy kaydedilirken hata oluştu.", "error");
+      }
+    }
+
+    fullNameInput.addEventListener("input", updateCandidates);
+    voteBtn.addEventListener("click", submitVote);
+  </script>
+</body>
+</html>
