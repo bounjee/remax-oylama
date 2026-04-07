@@ -17,6 +17,7 @@ npm start
 ## Netlify
 - `netlify.toml` hazır (build: `npm install`, yayın: `public/`, functions: `netlify/functions`).
 - Üretimde **Site settings → Environment variables**: `ADMIN_USERNAME`, `ADMIN_PASSWORD`, güçlü bir `SESSION_SECRET`.
+- **Kalıcı veri (Netlify Blobs)** için: Netlify hesabında **User settings → Applications → Personal access tokens** ile token oluştur; sitede **`NETLIFY_AUTH_TOKEN`** adıyla bu token’ı kaydet (**Scopes**: en azından site/Blobs erişimi). `SITE_ID` zaten fonksiyonlarda otomatik gelir. Bu olmadan bazı ortamlarda `connectLambda` + otomatik context yetmeyebilir; oylama aç/kapa veya oy yazımı 500 verebilir.
 
 ### GitHub ile yayın (önerilen)
 1. [GitHub](https://github.com)’da **New repository** ile boş bir repo oluştur (README ekleme zorunlu değil).

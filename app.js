@@ -445,7 +445,7 @@ function createApp() {
 
   app.use((err, req, res, next) => {
     void next;
-    console.error(err);
+    console.error("API error:", err && err.message, err && err.stack);
     res.status(500).json({ message: "Sunucu hatası." });
   });
 
