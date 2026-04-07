@@ -16,8 +16,15 @@ npm start
 
 ## Netlify
 - `netlify.toml` hazır (build: `npm install`, yayın: `public/`, functions: `netlify/functions`).
-- Üretimde **Site settings → Environment variables**: `ADMIN_USERNAME`, `ADMIN_PASSWORD`, güçlü bir `SESSION_SECRET`.
-- **Kalıcı veri (Netlify Blobs)** için: Netlify hesabında **User settings → Applications → Personal access tokens** ile token oluştur; sitede **`NETLIFY_AUTH_TOKEN`** adıyla bu token’ı kaydet (**Scopes**: en azından site/Blobs erişimi). `SITE_ID` zaten fonksiyonlarda otomatik gelir. Bu olmadan bazı ortamlarda `connectLambda` + otomatik context yetmeyebilir; oylama aç/kapa veya oy yazımı 500 verebilir.
+- Üretimde **Site settings → Environment variables** (Functions kapsamı):
+  - `ADMIN_USERNAME`, `ADMIN_PASSWORD`, güçlü bir `SESSION_SECRET`
+  - **Zorunlu:** [Upstash Redis](https://console.upstash.com) (ücretsiz) → **Create database** → **REST API** sekmesinden:
+    - **`UPSTASH_REDIS_REST_URL`**
+    - **`UPSTASH_REDIS_REST_TOKEN`**
+  Sunucusuz ortamda dosya kalıcı olmadığı için oy verisi **Redis** üzerinde tutulur; bu iki değişken yoksa API yapılandırma hatası döner.
+
+### Yerel `npm start`
+Redis gerekmez; veri `oylama.json` dosyasına yazılır.
 
 ### GitHub ile yayın (önerilen)
 1. [GitHub](https://github.com)’da **New repository** ile boş bir repo oluştur (README ekleme zorunlu değil).

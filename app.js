@@ -1,7 +1,7 @@
 const express = require("express");
 const path = require("path");
 const cookieSession = require("cookie-session");
-const { query, mutate } = require("./lib/store");
+const { query, mutate, ConfigError } = require("./lib/store");
 
 function normalizeName(text = "") {
   return String(text).trim().replace(/\s+/g, " ").toLocaleUpperCase("tr-TR");
@@ -446,6 +446,9 @@ function createApp() {
   app.use((err, req, res, next) => {
     void next;
     console.error("API error:", err && err.message, err && err.stack);
+    if (err instanceof ConfigError || (err && err.expose && err.statusCode)) {
+      return res.status(err.statusCode || 503).json({ message: err.message });
+    }
     res.status(500).json({ message: "Sunucu hatası." });
   });
 
